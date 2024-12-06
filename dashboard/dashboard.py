@@ -93,7 +93,7 @@ def show_maps(df, ovr='all'):
 
     folium_static(maps)
 
-all_station_df = pd.read_csv('all_station.csv')
+all_station_df = pd.read_csv('https://raw.githubusercontent.com/irfnse/air-quality-data-analysis/refs/heads/master/dashboard/all_station.csv')
 station_most = get_most_polution(all_station_df)
 air_pollution = get_air_pollution(all_station_df)
 
