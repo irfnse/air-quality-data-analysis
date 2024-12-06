@@ -93,6 +93,9 @@ def show_maps(df, ovr='all'):
 
     folium_static(maps)
 
+def update_selectbox():
+    st.session_state.selectbox_state = st.session_state.selectbox
+
 all_station_df = pd.read_csv('https://raw.githubusercontent.com/irfnse/air-quality-data-analysis/refs/heads/master/dashboard/all_station.csv')
 station_most = get_most_polution(all_station_df)
 air_pollution = get_air_pollution(all_station_df)
@@ -124,6 +127,7 @@ with tab1:
     st.line_chart(air_pollution[["PM2.5","PM10","RAIN"]])
 
     st.subheader("Average PM2.5, PM10, and Rain in China Station")
+    most = station_most[["PM2.5","PM10","RAIN"]]
     st.write("Average PM2.5, PM10, and Rain in China Station")
     st.bar_chart(station_most[["PM2.5","PM10","RAIN","station"]].set_index('station'), stack=False)
     st.write("Average Rain in China Station")
@@ -137,9 +141,16 @@ with tab1:
     st.table(get_corr_rain(corr_df))
 
 with tab2:
-    station = st.selectbox("",["Aotizhongxin","Changping","Dingling","Dongsi","Guanyuan","Gucheng","Huairou","Nongzhanguan","Shunyi","Tiantan","Wanliu","Wanshouxigong"])
-    st.subheader("Average Air Quality {} Station from 2013 to 2017".format(station))
-    station_most = station_most[station_most['station'] == station]
+    if 'selectbox_state' not in st.session_state:
+        st.session_state.selectbox_state = 'Aotizhongxin'
+        
+    st.selectbox("",["Aotizhongxin","Changping","Dingling","Dongsi","Guanyuan","Gucheng","Huairou","Nongzhanguan","Shunyi","Tiantan","Wanliu","Wanshouxigong"],
+                 key='selectbox',
+                 index=["Aotizhongxin","Changping","Dingling","Dongsi","Guanyuan","Gucheng","Huairou","Nongzhanguan","Shunyi","Tiantan","Wanliu","Wanshouxigong"].index(st.session_state.selectbox_state),
+                 on_change=update_selectbox)
+    st.subheader("Average Air Quality {} Station from 2013 to 2017".format(st.session_state.selectbox_state))
+    station_most = station_most[station_most['station'] == st.session_state.selectbox_state]
+    station_most.reset_index(inplace=True)
 
     with st.container():
         cols1, cols2, cols3 = st.columns([1,1,3])
@@ -151,8 +162,9 @@ with tab2:
         cols2.metric("PM10", round(station_most.loc[0,'PM10']))
         cols2.metric("NO2", round(station_most.loc[0,'NO2']))
     
-    show_maps(station_most,station)
+    show_maps(station_most,st.session_state.selectbox_state)
 
     st.subheader("Air Pollution Trend")
-    station_air = get_air_pollution(all_station_df[all_station_df['station'] == station])
+    station_air = get_air_pollution(all_station_df[all_station_df['station'] == st.session_state.selectbox_state])
     st.line_chart(station_air[['PM2.5','PM10','SO2','NO2','O3']])
+
