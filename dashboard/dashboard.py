@@ -101,15 +101,31 @@ st.title("Air Quality in China Station")
 tab1, tab2 = st.tabs(["Overall Average", "Average by Station"])
 with tab1:
     st.header("Average Air Quality from 2013 to 2017")
+    avg_all = all_station_df[["PM2.5","PM10","SO2","NO2","CO","O3","RAIN"]]
+    avg_all['grp'] = 'avg_all'
+    avg_all = avg_all[["PM2.5","PM10","SO2","NO2","CO","O3","RAIN","grp"]].groupby('grp').mean()
+    avg_all.reset_index(inplace=True)
+    avg_all['max_v'] = avg_all[['PM2.5', 'PM10', 'O3']].max(axis=1)
+    avg_all['max_c'] = avg_all[['PM2.5', 'PM10', 'O3']].max().idxmax()
+
+    with st.container():
+        cols1, cols2, cols3 = st.columns([1,1,3])
+        with cols3:
+            st.markdown(""" <div style="font-size:16px;">&nbsp</div> <div style="font-size:30px;">{} </div> """.format(get_color_and_quality(avg_all.loc[0,'max_v'])[1]), unsafe_allow_html=True)
+        cols3.metric("Most Pollutant", avg_all.loc[0,'max_c'])
+        cols1.metric("PM2.5", round(avg_all.loc[0,'PM2.5']))
+        cols1.metric("O3", round(avg_all.loc[0,'O3']))
+        cols2.metric("PM10", round(avg_all.loc[0,'PM10']))
+        cols2.metric("NO2", round(avg_all.loc[0,'NO2']))
+        
     show_maps(station_most)
 
     st.subheader("PM2.5, PM10, and Rain Trend")
     st.line_chart(air_pollution[["PM2.5","PM10","RAIN"]])
 
     st.subheader("Average PM2.5, PM10, and Rain in China Station")
-    most = station_most[["PM2.5","PM10","RAIN"]]
-    st.write("Average PM2.5 and PM10 in China Station")
-    st.bar_chart(station_most[["PM2.5","PM10","station"]].set_index('station'))
+    st.write("Average PM2.5, PM10, and Rain in China Station")
+    st.bar_chart(station_most[["PM2.5","PM10","RAIN","station"]].set_index('station'), stack=False)
     st.write("Average Rain in China Station")
     st.bar_chart(station_most[["RAIN","station"]].set_index('station'))
     st.header("Correlation")
@@ -124,20 +140,18 @@ with tab2:
     station = st.selectbox("",["Aotizhongxin","Changping","Dingling","Dongsi","Guanyuan","Gucheng","Huairou","Nongzhanguan","Shunyi","Tiantan","Wanliu","Wanshouxigong"])
     st.subheader("Average Air Quality {} Station from 2013 to 2017".format(station))
     station_most = station_most[station_most['station'] == station]
-    show_maps(station_most,station)
-
 
     with st.container():
         cols1, cols2, cols3 = st.columns([1,1,3])
         with cols3:
             st.markdown(""" <div style="font-size:16px;">&nbsp</div> <div style="font-size:30px;">{} </div> """.format(get_color_and_quality(station_most.loc[0,'max_v'])[1]), unsafe_allow_html=True)
-        cols3.metric("Most Polutant", station_most.loc[0,'max_c'])
+        cols3.metric("Most Pollutant", station_most.loc[0,'max_c'])
         cols1.metric("PM2.5", round(station_most.loc[0,'PM2.5']))
         cols1.metric("O3", round(station_most.loc[0,'O3']))
         cols2.metric("PM10", round(station_most.loc[0,'PM10']))
         cols2.metric("NO2", round(station_most.loc[0,'NO2']))
-
-
+    
+    show_maps(station_most,station)
 
     st.subheader("Air Pollution Trend")
     station_air = get_air_pollution(all_station_df[all_station_df['station'] == station])
